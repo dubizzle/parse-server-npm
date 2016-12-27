@@ -43,6 +43,7 @@ export class UsersRouter extends ClassesRouter {
 
   handleMe(req) {
     if (!req.info || !req.info.sessionToken) {
+      console.error("handleMe 1: Invalid sessionToken");
       throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'invalid session token');
     }
     let sessionToken = req.info.sessionToken;
@@ -53,6 +54,8 @@ export class UsersRouter extends ClassesRouter {
         if (!response.results ||
           response.results.length == 0 ||
           !response.results[0].user) {
+
+          console.error("handleMe 2: Invalid sessionToken: \"" + sessionToken + "\"");
           throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'invalid session token');
         } else {
           let user = response.results[0].user;
