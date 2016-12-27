@@ -57,6 +57,7 @@ var getAuthForSessionToken = function({ config, sessionToken, installationId } =
     return query.execute().then((response) => {
       var results = response.results;
       if (results.length !== 1 || !results[0]['user']) {
+        console.error("getAuthForSessionToken: Invalid sessionToken: \"" + sessionToken + "\"");
         throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'invalid session token');
       }
 
