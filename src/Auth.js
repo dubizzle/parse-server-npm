@@ -57,12 +57,14 @@ var getAuthForSessionToken = function({ config, sessionToken, installationId } =
     return query.execute().then((response) => {
       var results = response.results;
       if (results.length !== 1 || !results[0]['user']) {
+        console.error("getAuthForSessionToken 1: Invalid sessionToken: \"" + sessionToken + "\"");
         throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'invalid session token');
       }
 
       var now = new Date(),
         expiresAt = results[0].expiresAt ? new Date(results[0].expiresAt.iso) : undefined;
       if (expiresAt < now) {
+        console.error("getAuthForSessionToken 2: Invalid sessionToken: \"" + sessionToken + "\"");
         throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN,
           'Session token is expired.');
       }
@@ -85,6 +87,7 @@ var getAuthForLegacySessionToken = function({config, sessionToken, installationI
   return query.execute().then((response) => {
     var results = response.results;
     if (results.length !== 1) {
+      console.error("getAuthForLegacySessionToken: Invalid sessionToken: \"" + sessionToken + "\"");
       throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'invalid legacy session token');
     }
     const obj = results[0];
