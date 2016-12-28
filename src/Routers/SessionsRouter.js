@@ -35,12 +35,14 @@ export class SessionsRouter extends ClassesRouter {
   handleMe(req) {
     // TODO: Verify correct behavior
     if (!req.info || !req.info.sessionToken) {
+      console.error("SessionsRouter - handleMe 1: Invalid sessionToken (Required)");
       throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN,
         'Session token required.');
     }
     return rest.find(req.config, Auth.master(req.config), '_Session', { sessionToken: req.info.sessionToken }, undefined, req.info.clientSDK)
       .then((response) => {
         if (!response.results || response.results.length == 0) {
+          console.error("SessionsRouter - handleMe 2: Invalid sessionToken (Not found) "+req.info.sessionToken);
           throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN,
             'Session token not found.');
         }
