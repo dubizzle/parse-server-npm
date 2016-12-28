@@ -54,7 +54,6 @@ export class UsersRouter extends ClassesRouter {
         if (!response.results ||
           response.results.length == 0 ||
           !response.results[0].user) {
-
           console.error("UsersRouter - handleMe 2: Invalid sessionToken: \"" + sessionToken + "\"");
           throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'invalid session token');
         } else {
