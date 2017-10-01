@@ -1,8 +1,9 @@
 // FunctionsRouter.js
 
-var Parse = require('parse/node').Parse,
-  triggers = require('../triggers');
-
+var nr = require('newrelic');
+var express = require('express'),
+    Parse = require('parse/node').Parse,
+    triggers = require('../triggers');
 import PromiseRouter from '../PromiseRouter';
 import { promiseEnforceMasterKeyAccess } from '../middlewares';
 import { jobStatusHandler } from '../StatusHandler';
@@ -127,6 +128,12 @@ export class FunctionsRouter extends PromiseRouter {
         const cleanInput = logger.truncateLogMessage(JSON.stringify(params));
         var response = FunctionsRouter.createResponseObject((result) => {
           try {
+            // log in newrelic
+            nr.addCustomParameters({
+              "functionName": functionName,
+              "params": cleanInput,
+              "user": userString
+            });
             const cleanResult = logger.truncateLogMessage(JSON.stringify(result.response.result));
             logger.info(`Ran cloud function ${functionName} for user ${userString} `
               + `with:\n  Input: ${cleanInput }\n  Result: ${cleanResult }`, {
