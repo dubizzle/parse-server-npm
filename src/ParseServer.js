@@ -301,10 +301,10 @@ class ParseServer {
 
     api.use('/health', (req, res) => res.sendStatus(200));
 
-    api.use('/webhooks', bodyParser.urlencoded({extended: false}), new WebhooksRouter().expressRouter());
     api.use('/', bodyParser.urlencoded({extended: false}), new PublicAPIRouter().expressRouter());
 
     api.use(bodyParser.json({ 'type': '*/*' , limit: maxUploadSize }));
+    api.use('/webhooks', new WebhooksRouter().expressRouter());
     api.use(middlewares.allowCrossDomain);
     api.use(middlewares.allowMethodOverride);
     api.use(middlewares.handleParseHeaders);
