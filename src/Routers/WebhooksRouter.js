@@ -30,9 +30,9 @@ function parseParams(params) {
 
 export class WebhooksRouter extends PromiseRouter {
 
-  sendBirdNewConversation(req) {
+  sendBirdWebhook(req) {
     const appId = Parse.applicationId; // Get the Parse applicationId to access the config
-    return this.handleCloudFunction(req, 'sendBirdNewConversation', appId);
+    return this.handleCloudFunction(req, 'sbWebhook', appId);
   }
 
   static createResponseObject(resolve, reject, message) {
@@ -124,8 +124,8 @@ export class WebhooksRouter extends PromiseRouter {
   }
 
   mountRoutes() {
-    this.route('POST','/sendbird/new-conversation',
-      req => { return this.sendBirdNewConversation(req); });
+    this.route('POST','/sendbird',
+      req => { return this.sendBirdWebhook(req); });
   }
 
   expressRouter() {
