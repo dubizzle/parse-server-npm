@@ -136,6 +136,8 @@ export function handleParseHeaders(req, res, next) {
     delete info.sessionToken;
   }
 
+  console.info(JSON.stringify({'headers':req.headers, 'url':req.url, 'body':req.body})); //Track every request we receive
+
   if (!info.sessionToken) {
     req.auth = new auth.Auth({ config: req.config, installationId: info.installationId, isMaster: false });
     next();
