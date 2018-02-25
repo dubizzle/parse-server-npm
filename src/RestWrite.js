@@ -587,6 +587,7 @@ RestWrite.prototype.handleSession = function() {
   }
 
   if (!this.auth.user && !this.auth.isMaster) {
+    console.error("handleSession: Invalid sessionToken (Required)");
     throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN,
                           'Session token required.');
   }
