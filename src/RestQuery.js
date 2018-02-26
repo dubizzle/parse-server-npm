@@ -28,6 +28,7 @@ function RestQuery(config, auth, className, restWhere = {}, restOptions = {}, cl
     this.findOptions.acl = this.auth.user ? [this.auth.user.id] : null;
     if (this.className == '_Session') {
       if (!this.findOptions.acl) {
+        console.error("RestQuery: Invalid sessionToken");
         throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN,
                               'This session token is invalid.');
       }

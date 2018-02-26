@@ -1,14 +1,12 @@
-// FunctionsRouter.js
-
-var nr = require('newrelic');
-var express = require('express'),
-    Parse = require('parse/node').Parse,
-    triggers = require('../triggers');
 import PromiseRouter from '../PromiseRouter';
-import { promiseEnforceMasterKeyAccess } from '../middlewares';
-import { jobStatusHandler } from '../StatusHandler';
+import Config from '../Config';
+import Parse from 'parse/node';
+import express from 'express';
 import _ from 'lodash';
 import { logger } from '../logger';
+const nr = require('newrelic');
+const triggers = require('../triggers');
+
 
 function parseObject(obj) {
   if (Array.isArray(obj)) {
@@ -30,52 +28,11 @@ function parseParams(params) {
   return _.mapValues(params, parseObject);
 }
 
-export class FunctionsRouter extends PromiseRouter {
+export class WebhooksRouter extends PromiseRouter {
 
-  mountRoutes() {
-    this.route('POST', '/functions/:functionName', FunctionsRouter.handleCloudFunction);
-    this.route('POST', '/jobs/:jobName', promiseEnforceMasterKeyAccess, function(req) {
-      return FunctionsRouter.handleCloudJob(req);
-    });
-    this.route('POST', '/jobs', promiseEnforceMasterKeyAccess, function(req) {
-      return FunctionsRouter.handleCloudJob(req);
-    });
-  }
-
-  static handleCloudJob(req) {
-    const jobName = req.params.jobName || req.body.jobName;
-    const applicationId = req.config.applicationId;
-    const jobHandler = jobStatusHandler(req.config);
-    const jobFunction = triggers.getJob(jobName, applicationId);
-    if (!jobFunction) {
-      throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Invalid job.');
-    }
-    let params = Object.assign({}, req.body, req.query);
-    params = parseParams(params);
-    const request = {
-      params: params,
-      log: req.config.loggerController,
-      headers: req.headers,
-      jobName
-    };
-    const status = {
-      success: jobHandler.setSucceeded.bind(jobHandler),
-      error: jobHandler.setFailed.bind(jobHandler),
-      message: jobHandler.setMessage.bind(jobHandler)
-    }
-    return jobHandler.setRunning(jobName, params).then((jobStatus) => {
-      request.jobId = jobStatus.objectId
-      // run the function async
-      process.nextTick(() => {
-        jobFunction(request, status);
-      });
-      return {
-        headers: {
-          'X-Parse-Job-Status-Id': jobStatus.objectId
-        },
-        response: {}
-      }
-    });
+  sendBirdWebhook(req) {
+    const appId = Parse.applicationId; // Get the Parse applicationId to access the config
+    return this.handleCloudFunction(req, 'sbWebhook', appId);
   }
 
   static createResponseObject(resolve, reject, message) {
@@ -98,11 +55,10 @@ export class FunctionsRouter extends PromiseRouter {
     }
   }
 
-  static handleCloudFunction(req) {
-    const functionName = req.params.functionName;
-    const applicationId = req.config.applicationId;
+  handleCloudFunction(req, functionName, applicationId){
+    const config = new Config(applicationId);
     const theFunction = triggers.getFunction(functionName, applicationId);
-    const theValidator = triggers.getValidator(req.params.functionName, applicationId);
+    const theValidator = triggers.getValidator(functionName, applicationId);
     if (theFunction) {
       let params = Object.assign({}, req.body, req.query);
       params = parseParams(params);
@@ -110,8 +66,8 @@ export class FunctionsRouter extends PromiseRouter {
         params: params,
         master: req.auth && req.auth.isMaster,
         user: req.auth && req.auth.user,
-        installationId: req.info.installationId,
-        log: req.config.loggerController,
+        installationId: (req.info) ? req.info.installationId : undefined,
+        log: (config) ? config.loggerController : undefined,
         headers: req.headers,
         functionName
       };
@@ -126,7 +82,7 @@ export class FunctionsRouter extends PromiseRouter {
       return new Promise(function (resolve, reject) {
         const userString = (req.auth && req.auth.user) ? req.auth.user.id : undefined;
         const cleanInput = logger.truncateLogMessage(JSON.stringify(params));
-        var response = FunctionsRouter.createResponseObject((result) => {
+        var response = WebhooksRouter.createResponseObject((result) => {
           try {
             // log in newrelic
             nr.addCustomParameters({
@@ -160,14 +116,23 @@ export class FunctionsRouter extends PromiseRouter {
             reject(e);
           }
         });
-        // Force the keys before the function calls.
-        Parse.applicationId = req.config.applicationId;
-        Parse.javascriptKey = req.config.javascriptKey;
-        Parse.masterKey = req.config.masterKey;
         theFunction(request, response);
       });
     } else {
       throw new Parse.Error(Parse.Error.SCRIPT_FAILED, `Invalid function: "${functionName}"`);
     }
   }
+
+  mountRoutes() {
+    this.route('POST','/sendbird',
+      req => { return this.sendBirdWebhook(req); });
+  }
+
+  expressRouter() {
+    const router = express.Router();
+    router.use("/", super.expressRouter());
+    return router;
+  }
 }
+
+export default WebhooksRouter;

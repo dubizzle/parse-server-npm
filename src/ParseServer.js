@@ -38,6 +38,7 @@ import { LoggerController }     from './Controllers/LoggerController';
 import { LogsRouter }           from './Routers/LogsRouter';
 import { ParseLiveQueryServer } from './LiveQuery/ParseLiveQueryServer';
 import { PublicAPIRouter }      from './Routers/PublicAPIRouter';
+import { WebhooksRouter }       from './Routers/WebhooksRouter';
 import { PushController }       from './Controllers/PushController';
 import { PushRouter }           from './Routers/PushRouter';
 import { CloudCodeRouter }      from './Routers/CloudCodeRouter';
@@ -303,6 +304,7 @@ class ParseServer {
     api.use('/', bodyParser.urlencoded({extended: false}), new PublicAPIRouter().expressRouter());
 
     api.use(bodyParser.json({ 'type': '*/*' , limit: maxUploadSize }));
+    api.use('/webhooks', new WebhooksRouter().expressRouter());
     api.use(middlewares.allowCrossDomain);
     api.use(middlewares.allowMethodOverride);
     api.use(middlewares.handleParseHeaders);
