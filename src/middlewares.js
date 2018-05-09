@@ -1,10 +1,11 @@
-import AppCache   from './cache';
-import log        from './logger';
-import Parse      from 'parse/node';
-import auth       from './Auth';
-import Config     from './Config';
-import ClientSDK  from './ClientSDK';
-import etag       from 'etag';
+import AppCache     from './cache';
+import log          from './logger';
+import Parse        from 'parse/node';
+import auth         from './Auth';
+import Config       from './Config';
+import ClientSDK    from './ClientSDK';
+import _            from 'lodash';
+import etag         from 'etag';
 
 // Checks that the request is authorized for this app and checks user
 // auth too.
@@ -228,17 +229,30 @@ export function allowCrossDomain(req, res, next) {
 
 export function supportETag(req, res, next) {
   var oldSend = res.send;
-  res.send = function(data){
-      var body = data instanceof Buffer ? data.toString() : data;
-      var etagValue = etag(body);
+  var sentEtagValue = req.headers['if-none-match'];
+  var appId = req.get('X-Parse-Application-Id');
+  var app = AppCache.get(appId);
+  var redisCacheKey = 'etag:'+sentEtagValue;
 
-      res.header('ETag', etagValue);
-      if (req.headers['if-none-match'] == etagValue){
-        res.status(304);
+  if(!_.isEmpty(app) && _.includes(app.allowedEtagsURLS, req.url)) {
+    app.cacheController.get(redisCacheKey).then(etagValue => {
+      if (!_.isEmpty(sentEtagValue) && sentEtagValue == etagValue){
+        res.header('ETag', etagValue);
+        res.sendStatus(304);
+      } else {
+        res.send = function(data){
+          var body = data instanceof Buffer ? data.toString() : data;
+          var etagValue = etag(body);
+          res.header('ETag', etagValue);
+          app.cacheController.put(redisCacheKey, etagValue, app.ETagsTTL);
+          oldSend.call(this, body);
+        }
+        next();
       }
-      oldSend.call(this, body);
+    });
+  } else {
+    next();
   }
-  next();
 }
 
 export function allowMethodOverride(req, res, next) {
