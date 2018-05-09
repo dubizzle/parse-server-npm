@@ -4,6 +4,7 @@ import Parse      from 'parse/node';
 import auth       from './Auth';
 import Config     from './Config';
 import ClientSDK  from './ClientSDK';
+import etag       from 'etag';
 
 // Checks that the request is authorized for this app and checks user
 // auth too.
@@ -223,6 +224,21 @@ export function allowCrossDomain(req, res, next) {
   else {
     next();
   }
+}
+
+export function supportETag(req, res, next) {
+  var oldSend = res.send;
+  res.send = function(data){
+      var body = data instanceof Buffer ? data.toString() : data;
+      var etagValue = etag(body);
+
+      res.header('ETag', etagValue);
+      if (req.headers['if-none-match'] == etagValue){
+        res.status(304);
+      }
+      oldSend.call(this, body);
+  }
+  next();
 }
 
 export function allowMethodOverride(req, res, next) {

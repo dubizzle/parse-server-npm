@@ -306,6 +306,7 @@ class ParseServer {
     api.use(bodyParser.json({ 'type': '*/*' , limit: maxUploadSize }));
     api.use('/webhooks', new WebhooksRouter().expressRouter());
     api.use(middlewares.allowCrossDomain);
+    api.use(middlewares.supportETag);
     api.use(middlewares.allowMethodOverride);
     api.use(middlewares.handleParseHeaders);
 
