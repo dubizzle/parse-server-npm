@@ -91,6 +91,8 @@ class ParseServer {
     appId = requiredParameter('You must provide an appId!'),
     masterKey = requiredParameter('You must provide a masterKey!'),
     appName,
+    ETagsTTL,
+    allowedEtagsURLS,
     analyticsAdapter,
     filesAdapter,
     push,
@@ -205,6 +207,8 @@ class ParseServer {
       appId,
       masterKey: masterKey,
       serverURL: serverURL,
+      ETagsTTL: ETagsTTL,
+      allowedEtagsURLS: allowedEtagsURLS,
       collectionPrefix: collectionPrefix,
       clientKey: clientKey,
       javascriptKey: javascriptKey,
@@ -306,6 +310,7 @@ class ParseServer {
     api.use(bodyParser.json({ 'type': '*/*' , limit: maxUploadSize }));
     api.use('/webhooks', new WebhooksRouter().expressRouter());
     api.use(middlewares.allowCrossDomain);
+    api.use(middlewares.supportETag);
     api.use(middlewares.allowMethodOverride);
     api.use(middlewares.handleParseHeaders);
 
