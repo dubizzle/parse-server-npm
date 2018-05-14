@@ -217,6 +217,7 @@ export function allowCrossDomain(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'X-Parse-Master-Key, X-Parse-REST-API-Key, X-Parse-Javascript-Key, X-Parse-Application-Id, X-Parse-Client-Version, X-Parse-Session-Token, X-Requested-With, X-Parse-Revocable-Session, Content-Type');
+  res.header('Cache-Control', 'private');
 
   // intercept OPTIONS method
   if ('OPTIONS' == req.method) {
@@ -237,13 +238,13 @@ export function supportETag(req, res, next) {
   if(!_.isEmpty(app) && _.includes(app.allowedEtagsURLS, req.url)) {
     app.cacheController.get(redisCacheKey).then(etagValue => {
       if (!_.isEmpty(sentEtagValue) && sentEtagValue == etagValue){
-        res.header('ETag', etagValue);
+        res.header('Etag', etagValue);
         res.sendStatus(304);
       } else {
         res.send = function(data){
           var body = data instanceof Buffer ? data.toString() : data;
           var etagValue = etag(body);
-          res.header('ETag', etagValue);
+          res.header('Etag', etagValue);
           app.cacheController.put(redisCacheKey, etagValue, app.ETagsTTL);
           oldSend.call(this, body);
         }
