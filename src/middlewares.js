@@ -134,7 +134,7 @@ export function handleParseHeaders(req, res, next) {
     return invalidRequest(req, res);
   }
 
-  if (req.url == "/login") {
+  if (req.url == "/login" || req.url == "/config") {
     delete info.sessionToken;
   }
 
